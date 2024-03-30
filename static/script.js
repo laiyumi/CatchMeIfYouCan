@@ -66,8 +66,9 @@ window.addEventListener('keypress', (event) => {
 
 class Circle{
     constructor(x, y, radius, color){
-        this.x = x;
-        this.y = y;
+        this.x = canvas.width / 2;
+        this.y = canvas.height / 2;
+        this.direction = "vertical";//starts vertical
         this.radius = radius;
         this.color = color;
         this.dx = 2;
@@ -87,16 +88,68 @@ class Circle{
         this.draw();
     }
 
+    reset(){
+        this.x = canvas.width / 2;
+        this.y = canvas.height / 2;
+    }
+
+
     autoMove(){
-        if(this.x + this.radius > canvas.width || this.x - this.radius < 0){
-            this.dx = -this.dx;
+        if(this.direction == "vertical"){
+            if(this.y + this.radius >= canvas.height || this.y - this.radius < 0){
+                this.dy = -this.dy;
+            }
+            if(this.y - this.radius <= 0){
+                this.direction = "horizontal";
+                this.reset();
+            }else{
+                this.y += this.dy;//makes circle advance up/down
+             }
         }
-        if(this.y + this.radius > canvas.height || this.y - this.radius < 0){
-            this.dy = -this.dy;
+        if(this.direction == "horizontal"){
+            if(this.x + this.radius >= canvas.width || this.x - this.radius < 0){
+                this.dx = -this.dx;
+            }
+            if(this.x - this.radius <= 0){
+                this.direction = "diagonal";
+                this.reset();
+            }
+            else{
+                this.x += this.dx;
+            }
+         }
+
+        if(this.direction == "diagonal"){ //does not work yet.....
+            if (this.x + this.radius >= canvas.width || this.x - this.radius <= 0) {
+                this.dx = -this.dx;
+            }
+            else if (this.y + this.radius >= canvas.height || this.y - this.radius <= 0) {
+                this.dy = -this.dy;
+            }
+        
+            else if (this.x - this.radius <= 0 && this.y - this.radius <= 0) {
+                this.dx = -this.dx;
+                this.dy = -this.dy;
+            }
+        
+            else if (this.x + this.radius >= canvas.width && this.y - this.radius <= 0) {
+                this.dx = -this.dx;
+                this.dy = -this.dy;
+            }
+        
+            else if (this.x - this.radius <= 0 && this.y + this.radius >= canvas.height) {
+                this.dx = -this.dx;
+                this.dy = -this.dy;
+            }
+        
+            else if (this.x + this.radius >= canvas.width && this.y + this.radius >= canvas.height) {
+                this.dx = -this.dx;
+                this.dy = -this.dy;
+            }
         }
-        this.x += this.dx;
-        this.y += this.dy;
+
         this.draw();
+        
     }
 }
 
@@ -129,6 +182,7 @@ function animate() {
     context.fillStyle = 'rgba(255, 255, 255, 1)';
     context.fillRect(0, 0, window.innerWidth, window.innerHeight);
 
+    //targetPoint.reset();
     targetPoint.autoMove();
     eyePoint.draw();
     leftArea.draw();
@@ -194,5 +248,3 @@ eyePoint.draw();
 
 // Call the animate function
 animate();
-
-
