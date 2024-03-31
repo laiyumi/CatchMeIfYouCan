@@ -49,7 +49,7 @@ window.onload = async function() {
     // start the webgazer tracker
     let bufferX = [];
     let bufferY = [];
-    let bufferSize = 4; // Size of the moving window for the moving average, adjust as needed
+    let bufferSize = 16; // Size of the moving window for the moving average, adjust as needed
 
     await webgazer.setGazeListener(function(data, elapsedTime) {
         if (data === null) {
