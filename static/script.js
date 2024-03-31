@@ -57,7 +57,6 @@ window.onload = async function() {
 
 };
 
-
 window.addEventListener('keypress', (event) => {
     if (event.key === 'e') {
         webgazer.pause();
@@ -65,8 +64,6 @@ window.addEventListener('keypress', (event) => {
         webgazer.resume();
     }
 });
-
-
 
 class Circle{
     constructor(x, y, radius, color){
@@ -131,45 +128,6 @@ class Circle{
     }
 }
 
-class Oval {
-    constructor(context, x, y, radiusX, radiusY, rotation, startAngle, endAngle) {
-        this.context = context;
-        this.x = x;
-        this.y = y;
-        this.radiusX = radiusX;
-        this.radiusY = radiusY;
-        this.rotation = rotation;
-        this.startAngle = startAngle;
-        this.endAngle = endAngle;
-    }
-
-    draw() {
-        this.context.beginPath();
-        this.context.ellipse(
-            this.x, this.y, this.radiusX, this.radiusY, this.rotation,
-            this.startAngle, this.endAngle
-        );
-        this.context.stroke();
-    }
-
-    compress(axis) {
-        switch(axis){
-            case "vertical":
-                if(this.radiusX > 0){
-                    this.radiusX -= 1;
-                }
-                break;
-            case "horizontal":
-                if(this.radiusY > 0){
-                    this.radiusY -= 1;
-                }
-                break;
-        }
-        this.draw();
-    }
-}
-
-
 class Area {
     constructor(x, y, width, height, color) {
         this.x = x;
@@ -203,22 +161,11 @@ eyePoint = new Circle(300, 300, 30, 'yellow');
 targetPoint.draw();
 eyePoint.draw();
 
-var testOval = new Oval(context, 200, 200, 100, 50, 0, 0, 2 * Math.PI);
-
-
-
-
 // Create the animate function
 function animate() {
     // clear the canvas before each frame
     context.fillStyle = 'rgba(255, 255, 255)';
     context.fillRect(0, 0, window.innerWidth, window.innerHeight);
-
-    // mark the valid area
-    // leftArea.draw();
-    // rightArea.draw();
-    // topArea.draw();
-    // bottomArea.draw();
 
     context.fillStyle = 'rgba(255, 0, 255)';
 
@@ -228,29 +175,18 @@ function animate() {
     targetPoint.move(randomDirection);
     
     eyePoint.draw();
-    // testOval.compress("horizontal");
-
+    
     // calcualte the distance between the target point and the eye point
     var distance = Math.sqrt(Math.pow(targetPoint.x - eyePoint.x, 2) + Math.pow(targetPoint.y - eyePoint.y, 2));
-    // console.log("distance = " + distance);
-
+    
     // if distance is less than 10, then the target point is reached
     if(distance < 50){
         // reset the target point to the middle
         targetPoint.reset();
         alert("You catched me!");
     }
-
-
-
-    // console.log("ball position = " + targetPoint.x + " " + targetPoint.y);
-    // console.log("eye position = " + eyePoint.x + " " + eyePoint.y);
-
     requestAnimationFrame(animate);
 }
-
-
-
 
 // Define the grid structure
 var rows = 5;
@@ -269,39 +205,6 @@ var leftArea = new Area(0, 2*cellHeight, 2*cellWidth, cellHeight, 'blue');
 var rightArea = new Area(3*cellWidth, 2*cellHeight, 2*cellWidth, cellHeight, 'green');
 var topArea = new Area(2*cellWidth, 0, cellWidth, 2*cellHeight, 'red');
 var bottomArea = new Area(2*cellWidth, 3*cellHeight, cellWidth, 2*cellHeight, 'yellow');
-
-
-
-
-var count = 5;
-var countdownElement = document.getElementById("countdown");
-
-// check if the circle is in the target area
-var checkIfInArea = function(targetPoint,leftArea){
-    var count = 5;
-
-    var leftAreaCoordinates = leftArea.getCoordinates();
-    if(targetPoint.x <= leftAreaCoordinates.topRight.x && targetPoint.y <= leftAreaCoordinates.topRight.y && targetPoint.y >= leftAreaCoordinates.bottomRight.y){
-            return true;
-        }
-    return false;
-}
-
-// when the circle is in the target area, start the countdown
-// while(checkIfInArea(targetPoint, leftArea)){
-//     // countdown();
-// }
-
-// function countdown(){
-//     if(count >= 0){
-//         count--;
-//     } else {
-//         console.log("Good Job!!");
-//         // reset the circle to the middle
-//     }
-// }
-
-
 
 
 // Call the animate function
