@@ -81,60 +81,78 @@ class Circle{
     }
 
     move(direction){
-        if(direction == "up"){
-            while(this.y + this.radius < canvas.height){
-                this.dy += this.dy;
-            }
-            this.reset();
-        }
-        if(direction == "down"){
-            while(this.y - this.radius > 0){
-                this.y -= this.dy;
-            }
-            this.reset();
+        switch(direction){
+            case "down":
+                if(this.y + this.radius < canvas.height){
+                    this.y += this.dy;
+                } else {
+                    this.reset();
+                }
+                break;
+            case "up":
+                if(this.y - this.radius > 0){
+                this.y -= this.dx;
+                } else {
+                    this.reset();
+                }
+                break;
+            case "left":
+                if(this.x -= this.radius < 0){
+                    this.x -= this.dx;
+                } else {
+                    this.reset();
+                }
+                break;
+            case "right":
+                if(this.x += this.radius < canvas.width){
+                    this.x += this.dx;
+                } else {    
+                    this.reset();
+                }
+                break;
         }
 
-        if(direction == "horizontal"){
-            if(this.x + this.radius >= canvas.width || this.x - this.radius < 0){
-                this.dx = -this.dx;
-            }
-            if(this.x - this.radius <= 0){
-                // this.direction = "diagonal";
-                this.reset();
-            }
-            else{
-                this.x += this.dx;
-            }
-         }
+        // if(direction == "horizontal"){
+        //     if(this.x + this.radius >= canvas.width || this.x - this.radius < 0){
+        //         this.dx = -this.dx;
+        //     }
+        //     if(this.x - this.radius <= 0){
+        //         // this.direction = "diagonal";
+        //         this.reset();
+        //     }
+        //     else{
+        //         this.x += this.dx;
+        //     }
+        //  }
 
-        if(direction == "diagonal"){ //does not work yet.....
-            if (this.x + this.radius >= canvas.width || this.x - this.radius <= 0) {
-                this.dx = -this.dx;
-            }
-            else if (this.y + this.radius >= canvas.height || this.y - this.radius <= 0) {
-                this.dy = -this.dy;
-            }
+        // if(direction == "diagonal"){ //does not work yet.....
+        //     if (this.x + this.radius >= canvas.width || this.x - this.radius <= 0) {
+        //         this.dx = -this.dx;
+        //     }
+        //     else if (this.y + this.radius >= canvas.height || this.y - this.radius <= 0) {
+        //         this.dy = -this.dy;
+        //     }
         
-            else if (this.x - this.radius <= 0 && this.y - this.radius <= 0) {
-                this.dx = -this.dx;
-                this.dy = -this.dy;
-            }
+        //     else if (this.x - this.radius <= 0 && this.y - this.radius <= 0) {
+        //         this.dx = -this.dx;
+        //         this.dy = -this.dy;
+        //     }
         
-            else if (this.x + this.radius >= canvas.width && this.y - this.radius <= 0) {
-                this.dx = -this.dx;
-                this.dy = -this.dy;
-            }
+        //     else if (this.x + this.radius >= canvas.width && this.y - this.radius <= 0) {
+        //         this.dx = -this.dx;
+        //         this.dy = -this.dy;
+        //     }
         
-            else if (this.x - this.radius <= 0 && this.y + this.radius >= canvas.height) {
-                this.dx = -this.dx;
-                this.dy = -this.dy;
-            }
+        //     else if (this.x - this.radius <= 0 && this.y + this.radius >= canvas.height) {
+        //         this.dx = -this.dx;
+        //         this.dy = -this.dy;
+        //     }
         
-            else if (this.x + this.radius >= canvas.width && this.y + this.radius >= canvas.height) {
-                this.dx = -this.dx;
-                this.dy = -this.dy;
-            }
-        }
+        //     else if (this.x + this.radius >= canvas.width && this.y + this.radius >= canvas.height) {
+        //         this.dx = -this.dx;
+        //         this.dy = -this.dy;
+        //     }
+        // }
 
         this.draw();
         
@@ -181,25 +199,13 @@ function animate() {
     topArea.draw();
     bottomArea.draw();
 
-    targetPoint.move("up");
+    targetPoint.move("right");
     eyePoint.draw();
-
 
     console.log("ball position = " + targetPoint.x + " " + targetPoint.y);
     console.log("eye position = " + eyePoint.x + " " + eyePoint.y);
 
 
-    var count = 5;
-    // Check if the eye point is in right area
-    while(checkIfEyeInArea(eyePoint, rightArea)){
-        // start counting down for 5 seconds
-        startCountdown();
-        
-    }
-    if(count === 0){
-        clearInterval(countdown);
-        console.log("Good Job!");
-    }
 
     requestAnimationFrame(animate);
 }
@@ -249,6 +255,19 @@ var bottomArea = new Area(2*cellWidth, 3*cellHeight, cellWidth, 2*cellHeight, 'y
 eyePoint = new Circle(400, 400, 30, 'yellow');
 targetPoint.draw();
 eyePoint.draw();
+
+var count = 5;
+// Check if the eye point is in right area
+while(checkIfEyeInArea(eyePoint, rightArea)){
+    // start counting down for 5 seconds
+    startCountdown();
+    
+}
+if(count === 0){
+    clearInterval(countdown);
+    console.log("Good Job!");
+}
+
 
 // Call the animate function
 animate();
