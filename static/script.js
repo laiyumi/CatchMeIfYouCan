@@ -4,6 +4,7 @@ let targetPoint;
 let eyePoint;
 
 
+
 // set up the canvas
 canvas = document.getElementById('canvas');
 context = canvas.getContext('2d');
@@ -13,8 +14,6 @@ var window_height = window.innerHeight;
 
 canvas.width = window_width;
 canvas.height = window_height;
-
-
 
 
 window.onload = async function() {
@@ -51,24 +50,12 @@ window.addEventListener('keypress', (event) => {
 });
 
 
-// add event listener to the mouse move
-// canvas.addEventListener('mousemove', (event) => {
-//     let x = event.clientX ;
-//     let y = event.clientY;
-//     // made target point moves
-//     targetPoint.autoMove();
-//     // update eye point coordinate based on the mouse position
-//     eyePoint.update(x, y);
-//     console.log("eye position = " + x + " " + y);
-
-// });
-
 
 class Circle{
     constructor(x, y, radius, color){
         this.x = canvas.width / 2;
         this.y = canvas.height / 2;
-        this.direction = "vertical";//starts vertical
+        // this.direction = "vertical";
         this.radius = radius;
         this.color = color;
         this.dx = 2;
@@ -93,25 +80,26 @@ class Circle{
         this.y = canvas.height / 2;
     }
 
-
-    autoMove(){
-        if(this.direction == "vertical"){
-            if(this.y + this.radius >= canvas.height || this.y - this.radius < 0){
-                this.dy = -this.dy;
+    move(direction){
+        if(direction == "up"){
+            while(this.y + this.radius < canvas.height){
+                this.dy += this.dy;
             }
-            if(this.y - this.radius <= 0){
-                this.direction = "horizontal";
-                this.reset();
-            }else{
-                this.y += this.dy;//makes circle advance up/down
-             }
+            this.reset();
         }
-        if(this.direction == "horizontal"){
+        if(direction == "down"){
+            while(this.y - this.radius > 0){
+                this.y -= this.dy;
+            }
+            this.reset();
+        }
+
+        if(direction == "horizontal"){
             if(this.x + this.radius >= canvas.width || this.x - this.radius < 0){
                 this.dx = -this.dx;
             }
             if(this.x - this.radius <= 0){
-                this.direction = "diagonal";
+                // this.direction = "diagonal";
                 this.reset();
             }
             else{
@@ -119,7 +107,7 @@ class Circle{
             }
          }
 
-        if(this.direction == "diagonal"){ //does not work yet.....
+        if(direction == "diagonal"){ //does not work yet.....
             if (this.x + this.radius >= canvas.width || this.x - this.radius <= 0) {
                 this.dx = -this.dx;
             }
@@ -177,49 +165,65 @@ class Area {
     }
 }
 
+// set the start point
+var middleX = window.innerWidth / 2;
+var middleY = window.innerHeight / 2;
+targetPoint = new Circle(middleX, middleY, 10, 'black');
+
 // Create the animate function
 function animate() {
     context.fillStyle = 'rgba(255, 255, 255, 1)';
     context.fillRect(0, 0, window.innerWidth, window.innerHeight);
 
-    //targetPoint.reset();
-    targetPoint.autoMove();
-    eyePoint.draw();
+
     leftArea.draw();
     rightArea.draw();
     topArea.draw();
     bottomArea.draw();
 
+    targetPoint.move("up");
+    eyePoint.draw();
+
 
     console.log("ball position = " + targetPoint.x + " " + targetPoint.y);
     console.log("eye position = " + eyePoint.x + " " + eyePoint.y);
 
-    let distance = calDistance(eyePoint, targetPoint);
-    let validDistance = 10;
-    if(distance < validDistance){
-        console.log("good job!");
-    } else {
-        console.log("try again!");
+
+    var count = 5;
+    // Check if the eye point is in right area
+    while(checkIfEyeInArea(eyePoint, rightArea)){
+        // start counting down for 5 seconds
+        startCountdown();
+        
+    }
+    if(count === 0){
+        clearInterval(countdown);
+        console.log("Good Job!");
     }
 
     requestAnimationFrame(animate);
 }
 
-// calculate the distance of the eye point to the target point
-function calDistance(eyePoint, targetPoint){
-    let x = eyePoint.x - targetPoint.x;
-    let y = eyePoint.y - targetPoint.y;
-    return Math.sqrt(x*x + y*y);
+
+
+function checkIfEyeInArea(eyePoint, area){
+    let coordinates = area.getCoordinates();
+    if(eyePoint.x >= coordinates.topLeft.x && eyePoint.x <= coordinates.topRight.x && eyePoint.y >= coordinates.topLeft.y && eyePoint.y <= coordinates.bottomLeft.y){
+        return true;
+    }
+    return false;
+}
+
+var countdownElement = document.getElementById("countdown");
+function startCountdown() {
+    var countdown = setInterval(function() {
+        console.log(count);
+        count--;
+    }, 1000);
 }
 
 
 
-
-
-// set the start point
-var middleX = window.innerWidth / 2;
-var middleY = window.innerHeight / 2;
-targetPoint = new Circle(middleX, middleY, 10, 'black');
 
 
 // Define the grid structure
