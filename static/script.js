@@ -37,8 +37,8 @@ class VolumeMeter {
     }
 
     getVolume() {
-        return this.volume;
-    }
+        let scalingFactor = 0.7; // scale down the volume
+        return this.volume * scalingFactor;    }
 }
 
 let volumeMeter = new VolumeMeter();
@@ -120,6 +120,11 @@ class Circle{
         this.draw();
     }
 
+    updateColor(random){
+        let colors = ['black','blue', 'yellow', 'green', 'pink'];
+        this.color = colors[random];     
+    }
+
     reset(){
         this.x = canvas.width / 2;
         this.y = canvas.height / 2;
@@ -188,9 +193,12 @@ class Area {
 var startX = Math.random() * window.innerWidth;
 var startY = Math.random() * window.innerHeight;
 
+let colors = ['black','blue', 'yellow', 'green', 'pink'];
+let randomColor = Math.floor(Math.random() * colors.length);
+
 targetPoint = new Circle(startX, startY, 10, 'red');
 
-eyePoint = new Circle(300, 300, 30, 'yellow');
+eyePoint = new Circle(300, 300, 30, 'black');
 targetPoint.draw();
 eyePoint.draw();
 
@@ -217,6 +225,7 @@ function animate() {
     if(distance <= targetPoint.radius + eyePoint.radius){
         alert("You caught me!");
 
+
         // set target point to a random position
         targetPoint.reset();
         targetPoint.x = Math.random() * window.innerWidth;
@@ -229,6 +238,13 @@ function animate() {
 
         // reset eyePoint radius
         eyePoint.radius = 30;
+
+        // update the target point's color with eyePoint current color
+        targetPoint.updateColor(randomColor);
+
+        // randomize eyePoint color
+        randomColor = Math.floor(Math.random() * colors.length);
+        eyePoint.updateColor(randomColor);
         
     }
 
