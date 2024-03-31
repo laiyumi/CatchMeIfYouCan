@@ -74,8 +74,8 @@ class Circle{
         this.y = y;
         this.radius = radius;
         this.color = color;
-        this.dx = 2;
-        this.dy = 2;
+        this.dx = 10;
+        this.dy = 10;
     }
 
     draw() {
@@ -113,9 +113,8 @@ class Circle{
                 }
                 break;
             case "left":
-                if(this.x -= this.radius < 0){
-                    this.x -= this.dx;
-                } else {
+                this.x -= this.dx;
+                if(this.x - this.radius < 0){
                     this.reset();
                 }
                 break;
@@ -216,14 +215,31 @@ function animate() {
     context.fillRect(0, 0, window.innerWidth, window.innerHeight);
 
     // mark the valid area
-    leftArea.draw();
-    rightArea.draw();
-    topArea.draw();
-    bottomArea.draw();
+    // leftArea.draw();
+    // rightArea.draw();
+    // topArea.draw();
+    // bottomArea.draw();
 
-    targetPoint.move("left");
-    // eyePoint.draw();
+    context.fillStyle = 'rgba(255, 0, 255)';
+
+    // randomly pick one direction to move
+    var directions = ["up", "down", "left", "right"];
+    var randomDirection = directions[Math.floor(Math.random() * directions.length)];
+    targetPoint.move(randomDirection);
+    
+    eyePoint.draw();
     // testOval.compress("horizontal");
+
+    // calcualte the distance between the target point and the eye point
+    var distance = Math.sqrt(Math.pow(targetPoint.x - eyePoint.x, 2) + Math.pow(targetPoint.y - eyePoint.y, 2));
+    // console.log("distance = " + distance);
+
+    // if distance is less than 10, then the target point is reached
+    if(distance < 50){
+        // reset the target point to the middle
+        targetPoint.reset();
+        alert("You catched me!");
+    }
 
 
 
@@ -231,8 +247,6 @@ function animate() {
     // console.log("eye position = " + eyePoint.x + " " + eyePoint.y);
 
     requestAnimationFrame(animate);
-
-
 }
 
 
@@ -274,18 +288,18 @@ var checkIfInArea = function(targetPoint,leftArea){
 }
 
 // when the circle is in the target area, start the countdown
-while(checkIfInArea(targetPoint, leftArea)){
-    countdown();
-}
+// while(checkIfInArea(targetPoint, leftArea)){
+//     // countdown();
+// }
 
-function countdown(){
-    if(count >= 0){
-        count--;
-    } else {
-        console.log("Good Job!!");
-        // reset the circle to the middle
-    }
-}
+// function countdown(){
+//     if(count >= 0){
+//         count--;
+//     } else {
+//         console.log("Good Job!!");
+//         // reset the circle to the middle
+//     }
+// }
 
 
 
