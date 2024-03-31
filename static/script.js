@@ -15,6 +15,35 @@ var window_height = window.innerHeight;
 canvas.width = window_width;
 canvas.height = window_height;
 
+class VolumeMeter {
+    constructor() {
+        // request access to the microphone
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.scriptProcessor = this.audioContext.createScriptProcessor(1024, 1, 1);
+            this.mic = this.audioContext.createMediaStreamSource(stream);
+            this.analyser = this.audioContext.createAnalyser();
+            this.analyser.fftSize = 512;
+            this.scriptProcessor.connect(this.audioContext.destination);
+            this.mic.connect(this.analyser);
+            this.analyser.connect(this.scriptProcessor);
+            // starts the volume meter
+            this.scriptProcessor.onaudioprocess = e => {
+                let array = new Uint8Array(this.analyser.frequencyBinCount);
+                this.analyser.getByteFrequencyData(array);
+                this.volume = Math.max(...array) / 255;
+            };
+        });
+    }
+
+    getVolume() {
+        return this.volume;
+    }
+}
+
+let volumeMeter = new VolumeMeter();
+
+
 // call after the whole page is loaded
 window.onload = async function() {
     // start the webgazer tracker
@@ -65,6 +94,8 @@ window.addEventListener('keypress', (event) => {
     }
 });
 
+
+
 class Circle{
     constructor(x, y, radius, color){
         this.x = x;
@@ -85,6 +116,7 @@ class Circle{
     update(x,y){
         this.x = x;
         this.y = y;
+        this.radius = volumeMeter.getVolume() * 100;
         this.draw();
     }
 
@@ -153,10 +185,11 @@ class Area {
 }
 
 // set the start point
-var middleX = window.innerWidth / 2;
-var middleY = window.innerHeight / 2;
+var startX = Math.random() * window.innerWidth;
+var startY = Math.random() * window.innerHeight;
 
-targetPoint = new Circle(middleX, middleY, 10, 'red');
+targetPoint = new Circle(startX, startY, 10, 'red');
+
 eyePoint = new Circle(300, 300, 30, 'yellow');
 targetPoint.draw();
 eyePoint.draw();
@@ -167,7 +200,7 @@ function animate() {
     context.fillStyle = 'rgba(255, 255, 255)';
     context.fillRect(0, 0, window.innerWidth, window.innerHeight);
 
-    context.fillStyle = 'rgba(255, 0, 255)';
+    context.fillStyle = 'rgba(0, 0, 0)';
 
     // randomly pick one direction to move
     var directions = ["up", "down", "left", "right"];
@@ -179,12 +212,26 @@ function animate() {
     // calcualte the distance between the target point and the eye point
     var distance = Math.sqrt(Math.pow(targetPoint.x - eyePoint.x, 2) + Math.pow(targetPoint.y - eyePoint.y, 2));
     
-    // if distance is less than 10, then the target point is reached
-    if(distance < 50){
-        // reset the target point to the middle
+    // if the distance between the centers of the two points is less than or 
+    // equal to the sum of their radii, then the target point is reached
+    if(distance <= targetPoint.radius + eyePoint.radius){
+        alert("You caught me!");
+
+        // set target point to a random position
         targetPoint.reset();
-        alert("You catched me!");
+        targetPoint.x = Math.random() * window.innerWidth;
+        targetPoint.y = Math.random() * window.innerHeight;
+
+        // reset the eye point to a random position far away from the target point
+        eyePoint.reset();
+        eyePoint.x = Math.random() * window.innerWidth;
+        eyePoint.y = Math.random() * window.innerHeight;
+
+        // reset eyePoint radius
+        eyePoint.radius = 30;
+        
     }
+
     requestAnimationFrame(animate);
 }
 
