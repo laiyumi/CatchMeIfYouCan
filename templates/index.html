@@ -8,16 +8,19 @@
         <title>Catch Me if You Can</title>
 
         <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+        <script src="{{ url_for('static', filename='Three.js') }}"></script>
 
     </head>
     <body>
 
         <canvas id="canvas"></canvas>
 
+        <script src="{{ url_for('static', filename='script.js') }}"></script>
+        <script src="{{ url_for('static', filename='webgazer.js') }}" type="text/javascript"></script>
 
 
     </body>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    
 
 </html>
