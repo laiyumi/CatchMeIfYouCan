@@ -11,7 +11,7 @@ class Circle{
     constructor(x, y, radius, color){
         this.x = canvas.width / 2;
         this.y = canvas.height / 2;
-        this.direction = "vertical";//starts vertical
+        this.direction = "vertical1";//starts vertical
         this.radius = radius;
         this.color = color;
         this.dx = 2;
@@ -37,32 +37,52 @@ class Circle{
     }
 
 
-    autoMove(){
-        if(this.direction == "vertical"){
-            if(this.y + this.radius >= canvas.height || this.y - this.radius < 0){
+
+    autoMove(){ //state machine; resets to middle before each direction
+        if(this.direction == "vertical1"){
+            if(this.y + this.radius >= canvas.height || this.y - this.radius < 0){ //hits bottom
                 this.dy = -this.dy;
-            }
-            if(this.y - this.radius <= 0){
-                this.direction = "horizontal";
+                this.direction = "vertical2"
                 this.reset();
-            }else{
+            }
+            else{
                 this.y += this.dy;//makes circle advance up/down
-             }
+            }
         }
-        if(this.direction == "horizontal"){
+        if(this.direction == "vertical2"){
+            if(this.y - this.radius <= 0){//hits top
+                this.reset();
+                this.direction = "horizontal1";
+            }
+            else{
+                this.y += this.dy;
+            }
+        }
+        if(this.direction == "horizontal1"){
             if(this.x + this.radius >= canvas.width || this.x - this.radius < 0){
                 this.dx = -this.dx;
-            }
-            if(this.x - this.radius <= 0){
-                this.direction = "diagonal";
                 this.reset();
+                this.direction = "horizontal2"
             }
             else{
                 this.x += this.dx;
             }
          }
+        if(this.direction == "horizontal2"){
+            if(this.x - this.radius <= 0){
+                this.direction = "diagonal";
+                this.reset();
+            }
+            else{
+                this.x += this.dx; 
+            }
+        }
 
         if(this.direction == "diagonal"){ //does not work yet.....
+
+            this.x += this.dx;
+            this.y += this.dy;
+
             if (this.x + this.radius >= canvas.width || this.x - this.radius <= 0) {
                 this.dx = -this.dx;
             }
@@ -89,6 +109,7 @@ class Circle{
                 this.dx = -this.dx;
                 this.dy = -this.dy;
             }
+            //4 hits: upper left (0 width 0 height), upper right (width, 0 height) ...
         }
 
         this.draw();
