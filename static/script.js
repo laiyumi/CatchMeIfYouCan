@@ -1,8 +1,9 @@
+window.saveDataAcrossSessions = false;
+
 let context;
 let canvas;
 let targetPoint;
 let eyePoint;
-
 
 // set up the canvas
 canvas = document.getElementById('canvas');
@@ -14,31 +15,74 @@ var window_height = window.innerHeight;
 canvas.width = window_width;
 canvas.height = window_height;
 
+class VolumeMeter {
+    constructor() {
+        // request access to the microphone
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.scriptProcessor = this.audioContext.createScriptProcessor(1024, 1, 1);
+            this.mic = this.audioContext.createMediaStreamSource(stream);
+            this.analyser = this.audioContext.createAnalyser();
+            this.analyser.fftSize = 512;
+            this.scriptProcessor.connect(this.audioContext.destination);
+            this.mic.connect(this.analyser);
+            this.analyser.connect(this.scriptProcessor);
+            // starts the volume meter
+            this.scriptProcessor.onaudioprocess = e => {
+                let array = new Uint8Array(this.analyser.frequencyBinCount);
+                this.analyser.getByteFrequencyData(array);
+                this.volume = Math.max(...array) / 255;
+            };
+        });
+    }
+
+    getVolume() {
+        return this.volume;
+    }
+}
+
+let volumeMeter = new VolumeMeter();
 
 
-
+// call after the whole page is loaded
 window.onload = async function() {
-
     // start the webgazer tracker
+    let bufferX = [];
+    let bufferY = [];
+    let bufferSize = 16; // Size of the moving window for the moving average, adjust as needed
+
     await webgazer.setGazeListener(function(data, elapsedTime) {
-        if (data == null) {
+        if (data === null) {
             console.log("fail to track the eye");
             return;
         }
-        var xprediction = data.x; //these x coordinates are relative to the viewport
-        var yprediction = data.y; //these y coordinates are relative to the viewport
-        console.log(elapsedTime); //elapsed time is based on time since begin was called
-        console.log("eye prediction = " + xprediction + " " + yprediction);
+        
+        let xprediction = data.x; 
+        let yprediction = data.y; 
 
-        // update eye point coordinate based on the webgazer prediction
-        eyePoint.update(xprediction, yprediction);
+        // Update the moving averages.
+        bufferX.push(xprediction);
+        bufferY.push(yprediction);
+        if(bufferX.length > bufferSize) bufferX.shift(); // Remove the oldest value
+        if(bufferY.length > bufferSize) bufferY.shift(); // Remove the oldest value
+
+        // Compute smoothed predictions
+        let xSmoothed = bufferX.reduce((a, b) => a + b, 0) / bufferX.length;
+        let ySmoothed = bufferY.reduce((a, b) => a + b, 0) / bufferY.length;
+
+        // Update the eye coordinates with remediated data
+        eyePoint.update(xSmoothed, ySmoothed);
+
     }).begin();
 
-    webgazer.showVideoPreview(true); //shows all video canvsases
-    webgazer.showPredictionPoints(true); //shows a square every 100 milliseconds where current prediction is
+    // webgazer.setRegression("linear"); 
+    webgazer.setTracker("facedetection");
 
+    webgazer.showVideoPreview(true);
+    webgazer.showPredictionPoints(true);
 
-
+    console.log(webgazer.getRegression()) // Confirm current regression model
+    console.log(webgazer.getTracker()) // Confirm current tracker model
 
 };
 
@@ -51,40 +95,28 @@ window.addEventListener('keypress', (event) => {
 });
 
 
-// add event listener to the mouse move
-// canvas.addEventListener('mousemove', (event) => {
-//     let x = event.clientX ;
-//     let y = event.clientY;
-//     // made target point moves
-//     targetPoint.autoMove();
-//     // update eye point coordinate based on the mouse position
-//     eyePoint.update(x, y);
-//     console.log("eye position = " + x + " " + y);
-
-// });
-
 
 class Circle{
     constructor(x, y, radius, color){
-        this.x = canvas.width / 2;
-        this.y = canvas.height / 2;
-        this.direction = "vertical1";//starts vertical
+        this.x = x;
+        this.y = y;
         this.radius = radius;
         this.color = color;
-        this.dx = 2;
-        this.dy = 2;
+        this.dx = 10;
+        this.dy = 10;
     }
 
-    draw(){
+    draw() {
         context.beginPath();
-        context.arc(this.x, this.y, this.radius, 0, 2 * Math.PI); 
-        context.fillStyle = this.color;
+        context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        context.fillStyle = `rgb(${this.color.r}, ${this.color.g}, ${this.color.b})`;
         context.fill();
     }
 
     update(x,y){
         this.x = x;
         this.y = y;
+        this.radius = volumeMeter.getVolume() * 100;
         this.draw();
     }
 
@@ -93,82 +125,36 @@ class Circle{
         this.y = canvas.height / 2;
     }
 
-
-
-    autoMove(){ //state machine; resets to middle before each direction
-        if(this.direction == "vertical1"){
-            if(this.y + this.radius >= canvas.height || this.y - this.radius < 0){ //hits bottom
-                this.dy = -this.dy;
-                this.direction = "vertical2"
-                this.reset();
-            }
-            else{
-                this.y += this.dy;//makes circle advance up/down
-            }
+    move(direction){
+        switch(direction){
+            case "down":
+                if(this.y + this.radius < canvas.height){
+                    this.y += this.dy;
+                } else {
+                    this.reset();
+                }
+                break;
+            case "up":
+                if(this.y - this.radius > 0){
+                this.y -= this.dx;
+                } else {
+                    this.reset();
+                }
+                break;
+            case "left":
+                this.x -= this.dx;
+                if(this.x - this.radius < 0){
+                    this.reset();
+                }
+                break;
+            case "right":
+                if(this.x += this.radius < canvas.width){
+                    this.x += this.dx;
+                } else {    
+                    this.reset();
+                }
+                break;
         }
-        if(this.direction == "vertical2"){
-            if(this.y - this.radius <= 0){//hits top
-                this.reset();
-                this.direction = "horizontal1";
-            }
-            else{
-                this.y += this.dy;
-            }
-        }
-        if(this.direction == "horizontal1"){
-            if(this.x + this.radius >= canvas.width || this.x - this.radius < 0){
-                this.dx = -this.dx;
-                this.reset();
-                this.direction = "horizontal2"
-            }
-            else{
-                this.x += this.dx;
-            }
-         }
-        if(this.direction == "horizontal2"){
-            if(this.x - this.radius <= 0){
-                this.direction = "diagonal";
-                this.reset();
-            }
-            else{
-                this.x += this.dx; 
-            }
-        }
-
-        if(this.direction == "diagonal"){ //does not work yet.....
-
-            this.x += this.dx;
-            this.y += this.dy;
-
-            if (this.x + this.radius >= canvas.width || this.x - this.radius <= 0) {
-                this.dx = -this.dx;
-            }
-            else if (this.y + this.radius >= canvas.height || this.y - this.radius <= 0) {
-                this.dy = -this.dy;
-            }
-        
-            else if (this.x - this.radius <= 0 && this.y - this.radius <= 0) {
-                this.dx = -this.dx;
-                this.dy = -this.dy;
-            }
-        
-            else if (this.x + this.radius >= canvas.width && this.y - this.radius <= 0) {
-                this.dx = -this.dx;
-                this.dy = -this.dy;
-            }
-        
-            else if (this.x - this.radius <= 0 && this.y + this.radius >= canvas.height) {
-                this.dx = -this.dx;
-                this.dy = -this.dy;
-            }
-        
-            else if (this.x + this.radius >= canvas.width && this.y + this.radius >= canvas.height) {
-                this.dx = -this.dx;
-                this.dy = -this.dy;
-            }
-            //4 hits: upper left (0 width 0 height), upper right (width, 0 height) ...
-        }
-
         this.draw();
         
     }
@@ -198,50 +184,56 @@ class Area {
     }
 }
 
+// set the start point
+var startX = Math.random() * window.innerWidth;
+var startY = Math.random() * window.innerHeight;
+
+targetPoint = new Circle(startX, startY, 10, 'red');
+
+eyePoint = new Circle(300, 300, 30, 'yellow');
+targetPoint.draw();
+eyePoint.draw();
+
 // Create the animate function
 function animate() {
-    context.fillStyle = 'rgba(255, 255, 255, 1)';
+    // clear the canvas before each frame
+    context.fillStyle = 'rgba(255, 255, 255)';
     context.fillRect(0, 0, window.innerWidth, window.innerHeight);
 
-    //targetPoint.reset();
-    targetPoint.autoMove();
+    context.fillStyle = 'rgba(0, 0, 0)';
+
+    // randomly pick one direction to move
+    var directions = ["up", "down", "left", "right"];
+    var randomDirection = directions[Math.floor(Math.random() * directions.length)];
+    targetPoint.move(randomDirection);
+    
     eyePoint.draw();
-    leftArea.draw();
-    rightArea.draw();
-    topArea.draw();
-    bottomArea.draw();
+    
+    // calcualte the distance between the target point and the eye point
+    var distance = Math.sqrt(Math.pow(targetPoint.x - eyePoint.x, 2) + Math.pow(targetPoint.y - eyePoint.y, 2));
+    
+    // if the distance between the centers of the two points is less than or 
+    // equal to the sum of their radii, then the target point is reached
+    if(distance <= targetPoint.radius + eyePoint.radius){
+        alert("You caught me!");
 
+        // set target point to a random position
+        targetPoint.reset();
+        targetPoint.x = Math.random() * window.innerWidth;
+        targetPoint.y = Math.random() * window.innerHeight;
 
-    console.log("ball position = " + targetPoint.x + " " + targetPoint.y);
-    console.log("eye position = " + eyePoint.x + " " + eyePoint.y);
+        // reset the eye point to a random position far away from the target point
+        eyePoint.reset();
+        eyePoint.x = Math.random() * window.innerWidth;
+        eyePoint.y = Math.random() * window.innerHeight;
 
-    let distance = calDistance(eyePoint, targetPoint);
-    let validDistance = 10;
-    if(distance < validDistance){
-        console.log("good job!");
-    } else {
-        console.log("try again!");
+        // reset eyePoint radius
+        eyePoint.radius = 30;
+        
     }
 
     requestAnimationFrame(animate);
 }
-
-// calculate the distance of the eye point to the target point
-function calDistance(eyePoint, targetPoint){
-    let x = eyePoint.x - targetPoint.x;
-    let y = eyePoint.y - targetPoint.y;
-    return Math.sqrt(x*x + y*y);
-}
-
-
-
-
-
-// set the start point
-var middleX = window.innerWidth / 2;
-var middleY = window.innerHeight / 2;
-targetPoint = new Circle(middleX, middleY, 10, 'black');
-
 
 // Define the grid structure
 var rows = 5;
@@ -261,11 +253,6 @@ var rightArea = new Area(3*cellWidth, 2*cellHeight, 2*cellWidth, cellHeight, 'gr
 var topArea = new Area(2*cellWidth, 0, cellWidth, 2*cellHeight, 'red');
 var bottomArea = new Area(2*cellWidth, 3*cellHeight, cellWidth, 2*cellHeight, 'yellow');
 
-
-
-eyePoint = new Circle(400, 400, 30, 'yellow');
-targetPoint.draw();
-eyePoint.draw();
 
 // Call the animate function
 animate();
